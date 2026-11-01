@@ -1,0 +1,58 @@
+# Arkham divider layout. All lengths in mm. Print flat; filament colour swap at Z = plate.thickness.
+# Element positions (x, y) are relative to the centre of the element named in `on` (body or tab).
+
+[plate]
+width = 70.0            # premium sleeve is 66 wide
+height = 96.0           # body only; sleeve is 91 tall; the tab adds on top
+thickness = 1.0         # base = 5 layers @ 0.2
+corner_radius = 3.0     # every outline corner: body, tab, tab-to-body
+top_fillet = 0.4
+bottom_chamfer = 0.3    # chamfer, not fillet: no overhang, hides elephant foot
+
+[tab]
+width = 26.0
+height = 18.0
+slots = 3               # stagger positions left -> right; divider n uses slot (n-1) % slots; step 16 mm, so 14 mm icons never overlap when stacked
+margin = 7.0            # body side edge to the outermost tab; more than 2 x corner_radius
+
+[relief]
+height = 0.6            # 3 layers @ 0.2
+
+[pattern]
+type = "hex"            # solid | hex | grid
+cell = 6.0              # hole size, flat-to-flat
+wall = 1.6              # wall between holes (4 extrusion widths)
+border = 4.0            # solid frame around the body
+keepout_pad = 1.5       # solid margin kept around text and icon
+
+[title]
+on = "body"
+font = "fonts/ArnoPro-Bold.ttf"
+size = 7.0              # em height
+x = 0.0
+y = 36.0
+align = "center"
+max_width = 60.0
+max_lines = 2
+line_spacing = 1.15
+min_size = 4.0          # shrink floor when a title will not fit
+embolden = 0.1          # stroke added per side so Arno hairlines reach nozzle width
+min_feature = 0.3       # thinner details are removed rather than blobbed
+
+[count]
+on = "body"
+font = "fonts/ArnoPro-Bold.ttf"
+size = 6.0
+x = 0.0
+y = 22.0
+align = "center"
+embolden = 0.1
+min_feature = 0.3
+
+[icon]
+on = "tab"
+size = 14.0             # icon height
+x = 0.0
+y = 0.0
+embolden = 0.1          # thin icon arms survive the min_feature filter
+min_feature = 0.3

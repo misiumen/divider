@@ -1,0 +1,5 @@
+cadquery>=2.5
+shapely>=2.0
+fonttools>=4.50
+numpy
+pyinstaller>=6.10

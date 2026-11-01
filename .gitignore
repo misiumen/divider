@@ -1,0 +1,7 @@
+out/
+build/
+dist/
+__pycache__/
+*.zip
+*.log
+data/icomoon_project.json
