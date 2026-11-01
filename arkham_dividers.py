@@ -184,6 +184,43 @@ def slug(s):
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
 
 
+def load_layout(path):
+    """layout.toml with relative font paths resolved next to the script / exe."""
+    L = tomllib.loads(pathlib.Path(path).read_text(encoding="utf-8"))
+    for key in ("title", "count"):
+        p = pathlib.Path(L[key]["font"])
+        L[key]["font"] = str(p if p.is_absolute() else ROOT / p)
+    return L
+
+
+def prepare(campaign, lang_code, L, include_return=False, include_extra=True, log=print):
+    """Render-ready specs for a campaign: localized titles, icon SVGs on disk, tab slots, file names."""
+    core = fetch(f"{DATA_URL}/core.json", "core.json")
+    lang = {} if lang_code == "en" else fetch(f"{DATA_URL}/{lang_code}.json", f"{lang_code}.json")
+    specs = dividers(campaign, core, include_return, include_extra)
+    vec = None
+    for i, d in enumerate(specs, 1):
+        d["index"], d["slot"] = i, (i - 1) % L["tab"]["slots"]
+        d["title_en"] = d["title"]
+        local = translate(d, lang) if lang else None
+        d["title"], d["translated"] = local or d["title_en"], bool(local) or not lang
+        if d["icon"] and not (ICONS / f"{d['icon']}.svg").exists():
+            vec = vec if vec is not None else icomoon()
+            if not ensure_svg(d["icon"], vec):
+                log(f"warning: no vector for icon {d['icon']!r}, divider {i} gets none")
+                d["icon"] = None
+        d["file"] = f"{i:02d}_{d['type']}_{slug(d['title_en'])}.stl"
+    return specs
+
+
+def write_manifest(specs, path):
+    fields = ["index", "type", "code", "title", "title_en", "count", "icon", "slot", "translated", "file"]
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
+        w.writeheader()
+        w.writerows(specs)
+
+
 def main(argv=None):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -205,25 +242,8 @@ def main(argv=None):
         return
     if not a.campaign:
         ap.error("--campaign is required")
-    lang = {} if a.lang == "en" else fetch(f"{DATA_URL}/{a.lang}.json", f"{a.lang}.json")
-    L = tomllib.loads(a.layout.read_text(encoding="utf-8"))
-    for key in ("title", "count"):  # relative font paths live next to the script / exe
-        p = pathlib.Path(L[key]["font"])
-        L[key]["font"] = str(p if p.is_absolute() else ROOT / p)
-
-    specs = dividers(a.campaign, core, a.include_return, not a.no_extra)
-    vec = None
-    for i, d in enumerate(specs, 1):
-        d["index"], d["slot"] = i, (i - 1) % L["tab"]["slots"]
-        d["title_en"] = d["title"]
-        local = translate(d, lang) if lang else None
-        d["title"], d["translated"] = local or d["title_en"], bool(local) or not lang
-        if d["icon"] and not (ICONS / f"{d['icon']}.svg").exists():
-            vec = vec if vec is not None else icomoon()
-            if not ensure_svg(d["icon"], vec):
-                print(f"warning: no vector for icon {d['icon']!r}, divider {i} gets none")
-                d["icon"] = None
-        d["file"] = f"{i:02d}_{d['type']}_{slug(d['title_en'])}.stl"
+    L = load_layout(a.layout)
+    specs = prepare(a.campaign, a.lang, L, a.include_return, not a.no_extra)
 
     width = max(len(d["title"]) for d in specs)
     for d in specs:
@@ -234,11 +254,7 @@ def main(argv=None):
 
     out = OUT / f"{a.campaign}_{a.lang}"
     out.mkdir(parents=True, exist_ok=True)
-    fields = ["index", "type", "code", "title", "title_en", "count", "icon", "slot", "translated", "file"]
-    with open(out / "manifest.csv", "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
-        w.writeheader()
-        w.writerows(specs)
+    write_manifest(specs, out / "manifest.csv")
     for d in specs:
         if a.only and d["index"] not in a.only:
             continue

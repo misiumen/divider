@@ -1,3 +1,13 @@
+---
+title: Arkham Horror LCG Dividers
+emoji: 🃏
+colorFrom: gray
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Arkham Horror LCG divider generator
 
 Generates 3D-printable (STL) dividers for Arkham Horror: The Card Game campaigns:
