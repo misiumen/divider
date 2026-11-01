@@ -19,6 +19,13 @@ Data comes from [ArkhamDividerData](https://github.com/neizerth/ArkhamDividerDat
 [ArkhamCards](https://github.com/zzorba/ArkhamCards). Divider resolution is a port of
 [ArkhamDivider](https://github.com/neizerth/ArkhamDivider).
 
+## Generate online (GitHub, no install)
+
+Actions tab → **generate dividers** → **Run workflow**. Pick the campaign, language, pattern
+and whether to include the Return to... sets, click Run. About two minutes later the run
+shows an **Artifacts** box with a zip of the STLs and the manifest. Anyone with access to
+this repository can do this.
+
 ## Use the app (Windows, no Python needed)
 
 Download `ArkhamDividers-windows.zip` from Releases, unzip, open a terminal in the folder:
