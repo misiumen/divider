@@ -230,6 +230,7 @@ def main(argv=None):
     ap.add_argument("--include-return", action="store_true", help="also the Return to ... sets and scenarios")
     ap.add_argument("--no-extra", action="store_true", help="skip extra (core box) encounter sets")
     ap.add_argument("--pattern", choices=["hex", "grid", "solid"], help="override pattern.type from the layout")
+    ap.add_argument("--overrides", help='JSON merged over the layout, e.g. {"plate":{"width":74},"tab":{"slots":3}}')
     ap.add_argument("--list", action="store_true", help="print the divider table, render nothing")
     ap.add_argument("--only", type=int, nargs="*", help="render only these divider numbers")
     ap.add_argument("--campaigns", action="store_true", help="list official campaign codes and exit")

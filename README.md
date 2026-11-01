@@ -28,20 +28,25 @@ this repository can do this.
 
 ## Use the app (Windows, no Python needed)
 
-Download `ArkhamDividers-windows.zip` from Releases, unzip, open a terminal in the folder:
+Download `ArkhamDividers-windows.zip` from Releases, unzip, double-click `ArkhamDividers.exe`.
+Pick the campaign and language, move the sliders (plate and tab size, stagger slots, pattern,
+text and icon size) while the top-view preview updates, click **Generuj STL**. The output
+folder opens when done; your slider values are kept in `settings.json` for next time.
+
+The folder works offline for every official campaign in Polish and English. Other
+languages and icons for custom content are downloaded on first use.
+
+Command line (`python arkham_dividers.py` from source):
 
 ```
-ArkhamDividers.exe --campaigns                       list campaign codes
-ArkhamDividers.exe --campaign eoe --lang pl --list   show the dividers and card counts
-ArkhamDividers.exe --campaign eoe --lang pl          write STLs to out\eoe_pl\
+python arkham_dividers.py --campaigns                       list campaign codes
+python arkham_dividers.py --campaign eoe --lang pl --list   show the dividers and card counts
+python arkham_dividers.py --campaign eoe --lang pl          write STLs to out\eoe_pl\
 ```
 
 Options: `--lang en` (names as in the database), `--include-return` (adds the Return to...
 sets), `--no-extra` (skips the core-box sets), `--only 3 7` (render some dividers only),
-`--layout other.toml`.
-
-The folder works offline for every official campaign in Polish and English. Other
-languages and icons for custom content are downloaded on first use.
+`--pattern grid`, `--layout other.toml`.
 
 ## Customise
 

@@ -225,12 +225,30 @@ def tab_x(L, slot):
     return -P["width"] / 2 + T["margin"] + T["width"] / 2 + (slot * step if T["slots"] > 1 else span / 2)
 
 
-def plate(L, slot):
-    """Body + tab outline with every corner rounded, filleted top edge, chamfered bottom edge."""
+def check(L):
+    P, T = L["plate"], L["tab"]
+    r = P["corner_radius"]
+    if T["margin"] <= 2 * r or T["height"] <= 2 * r:  # exactly 2r fails inside OCC's 2D fillet
+        raise ValueError("margines i wysokość zakładki muszą przekraczać 2 x zaokrąglenie rogów")
+    if T["width"] > P["width"] - 2 * T["margin"]:
+        raise ValueError("zakładka szersza niż miejsce między marginesami")
+
+
+def outline_geom(L, slot):
+    """2D body + tab outline with rounded corners. Preview only; plate() builds the solid with true arcs."""
+    check(L)
     P, T = L["plate"], L["tab"]
     W, H, r = P["width"], P["height"], P["corner_radius"]
-    if T["margin"] <= 2 * r or T["height"] <= 2 * r:  # exactly 2r fails inside OCC's 2D fillet
-        raise ValueError("tab.margin and tab.height must exceed 2 * plate.corner_radius (two fillets share each short edge)")
+    tx, hw = tab_x(L, slot), T["width"] / 2
+    shape = unary_union([box(-W / 2, -H / 2, W / 2, H / 2), box(tx - hw, H / 2 - 1, tx + hw, H / 2 + T["height"])])
+    return shape.buffer(-r, quad_segs=6).buffer(2 * r, quad_segs=6).buffer(-r, quad_segs=6)
+
+
+def plate(L, slot):
+    """Body + tab outline with every corner rounded, filleted top edge, chamfered bottom edge."""
+    check(L)
+    P, T = L["plate"], L["tab"]
+    W, H, r = P["width"], P["height"], P["corner_radius"]
     tx, hw, top = tab_x(L, slot), T["width"] / 2, H / 2 + T["height"]
     pts = [(-W / 2, -H / 2), (W / 2, -H / 2), (W / 2, H / 2), (tx + hw, H / 2), (tx + hw, top), (tx - hw, top), (tx - hw, H / 2), (-W / 2, H / 2)]
     sketch = cq.Sketch().polygon(pts).vertices().fillet(r)
@@ -271,10 +289,9 @@ def pattern(L, keepout):
     return unary_union([c for c in cells if c.within(region) and not c.intersects(ko)])
 
 
-def build(spec, L, icon_dir):
-    """One divider. spec: title, count, icon (name or None), slot. Returns a Workplane with one solid."""
+def relief_geom(spec, L, icon_dir):
+    """Title, count and icon of one divider as a clean 2D (Multi)Polygon in plate coordinates."""
     P, T = L["plate"], L["tab"]
-    th, rh = P["thickness"], L["relief"]["height"]
 
     def origin(cfg):
         if cfg.get("on") == "tab":
@@ -292,8 +309,13 @@ def build(spec, L, icon_dir):
         ox, oy = origin(c)
         g = svg_geom(icon_dir / f"{spec['icon']}.svg", c["size"])
         parts.append(printable(place(g, ox + c["x"], oy + c["y"]), c.get("embolden", 0), c.get("min_feature", 0)))
-    relief = unary_union(parts)
+    return unary_union(parts)
 
+
+def build(spec, L, icon_dir):
+    """One divider. spec: title, count, icon (name or None), slot. Returns a Workplane with one solid."""
+    th, rh = L["plate"]["thickness"], L["relief"]["height"]
+    relief = relief_geom(spec, L, icon_dir)
     base = plate(L, spec["slot"])
     holes = pattern(L, relief)
     if holes is not None and not holes.is_empty:
