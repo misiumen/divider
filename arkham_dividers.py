@@ -127,10 +127,11 @@ def dividers(code, core, include_return=False, include_extra=True):
     base = _uniq([e for s in stories for e in s["encounterSets"]])
     extra = _uniq([e for s in stories for e in s["extraEncounterSets"]]) if include_extra else []
     extra_codes = {e["code"] for e in extra}
+    full = {s["code"]: s for s in core["encounterSets"]}  # the physical set, not the campaign's partial use of it
     for es in _uniq(base + extra):
         if es["code"] in main_codes:  # already represented by its scenario divider
             continue
-        out.append({"type": "encounter", "code": es["code"], "title": es["name"], "icon": es.get("icon"), "count": _cards(es), "extra": es["code"] in extra_codes})
+        out.append({"type": "encounter", "code": es["code"], "title": es["name"], "icon": es.get("icon"), "count": _cards(full.get(es["code"], es)), "extra": es["code"] in extra_codes})
     if code == "tsk":  # ArkhamDivider special divider
         out.append({"type": "encounter", "code": "concealed_cards", "title": "Concealed Cards", "icon": "special_cards", "count": 43})
     return out
@@ -215,6 +216,7 @@ def prepare(campaign, lang_code, L, include_return=False, include_extra=True, lo
 
 def write_manifest(specs, path):
     fields = ["index", "type", "code", "title", "title_en", "count", "icon", "slot", "translated", "file"]
+    fields += ["count_original"] if any("count_original" in d for d in specs) else []
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
         w.writeheader()

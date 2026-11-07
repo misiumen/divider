@@ -9,7 +9,7 @@ import os
 import queue
 import threading
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import messagebox, simpledialog, ttk
 
 import arkham_dividers as ad
 import divider_cad as cad
@@ -42,9 +42,10 @@ class App(tk.Tk):
         self.title("Arkham Horror LCG – przekładki")
         self.core = ad.fetch(f"{ad.DATA_URL}/core.json", "core.json")
         self.L = ad.load_layout(ad.ROOT / "layout.toml")
-        if SETTINGS.exists():
-            for sec, vals in json.loads(SETTINGS.read_text(encoding="utf-8")).items():
-                self.L[sec].update(vals)
+        saved = json.loads(SETTINGS.read_text(encoding="utf-8")) if SETTINGS.exists() else {}
+        self.counts = saved.pop("counts", {})  # {campaign: {divider code: count}}
+        for sec, vals in saved.items():
+            self.L[sec].update(vals)
         self.campaigns = {f'{s["name"]}  [{s["code"]}]': s["code"] for s in self.core["stories"] if s.get("is_official")}
         self._job = None
 
@@ -53,6 +54,17 @@ class App(tk.Tk):
         left.columnconfigure(1, weight=1)
         self.canvas = tk.Canvas(self, width=440, height=640, bg="white", highlightthickness=0)
         self.canvas.grid(row=0, column=1, padx=8, pady=8, sticky="n")
+        self.table = ttk.Treeview(self, columns=("nr", "title", "count"), show="headings", height=30)
+        for col, text, w in (("nr", "nr", 36), ("title", "tytuł (dwuklik w liczbę = zmiana)", 230), ("count", "kart", 50)):
+            self.table.heading(col, text=text)
+            self.table.column(col, width=w, anchor="w" if col == "title" else "e")
+        self.table.grid(row=0, column=2, pady=8, sticky="ns")
+        scroll = ttk.Scrollbar(self, command=self.table.yview)
+        scroll.grid(row=0, column=3, pady=8, sticky="ns")
+        self.table.configure(yscrollcommand=scroll.set)
+        self.table.bind("<<TreeviewSelect>>", lambda _e: self.table.selection() and int(self.table.selection()[0]) != self.preview_idx.get() and self.preview_idx.set(int(self.table.selection()[0])))
+        self.table.bind("<Double-1>", self.edit_count)
+        self.shown = []
 
         self.campaign = tk.StringVar(value=next(k for k, v in self.campaigns.items() if v == "eoe"))
         self.lang = tk.StringVar(value="pl")
@@ -114,7 +126,28 @@ class App(tk.Tk):
         return L
 
     def specs(self, L):
-        return ad.prepare(self.campaigns[self.campaign.get()], self.lang.get(), L, self.ret.get(), log=lambda m: None)
+        code = self.campaigns[self.campaign.get()]
+        specs = ad.prepare(code, self.lang.get(), L, self.ret.get(), log=lambda m: None)
+        over = self.counts.get(code, {})
+        for d in specs:  # the only place overrides apply: preview, STL and manifest all see this
+            if d["code"] in over:
+                d["count_original"], d["count"] = d["count"], over[d["code"]]
+        return specs
+
+    def edit_count(self, e):
+        row = self.table.identify_row(e.y)
+        if not row or self.table.identify_column(e.x) != "#3":
+            return
+        d = self.shown[int(row) - 1]
+        v = simpledialog.askstring("Liczba kart", f"{d['title']}\n(puste = z danych: {d.get('count_original', d['count'])})", initialvalue=d["count"], parent=self)
+        if v is None:
+            return
+        over = self.counts.setdefault(self.campaigns[self.campaign.get()], {})
+        if not v.strip():
+            over.pop(d["code"], None)
+        elif v.strip().isdigit():
+            over[d["code"]] = int(v)
+        self.schedule()
 
     def schedule(self, *_):
         if self._job:
@@ -128,6 +161,13 @@ class App(tk.Tk):
             specs = self.specs(L)
             i = min(max(1, self.preview_idx.get()), len(specs))
             spec = specs[i - 1]
+            if specs != self.shown:
+                self.table.delete(*self.table.get_children())
+                for d in specs:
+                    self.table.insert("", "end", iid=str(d["index"]), values=(d["index"], d["title"], f"{d['count']}*" if "count_original" in d else d["count"]))
+                self.shown = specs
+            self.table.selection_set(str(i))
+            self.table.see(str(i))
             relief = cad.relief_geom(spec, L, ad.ICONS)
             holes = cad.pattern(L, relief)
             ghosts = [cad.outline_geom(L, s) for s in range(L["tab"]["slots"])]
@@ -182,6 +222,7 @@ class App(tk.Tk):
                 ad.write_manifest(specs, out / "manifest.csv")
                 saved = {sec: {k: L[sec][k] for (s2, k) in self.vars if s2 == sec} for sec in {s for s, _ in self.vars}}
                 saved["pattern"]["type"] = L["pattern"]["type"]
+                saved["counts"] = self.counts
                 SETTINGS.write_text(json.dumps(saved, indent=1), encoding="utf-8")
                 events.put(("done", None))
             except Exception as e:

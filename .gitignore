@@ -4,7 +4,8 @@ dist/
 __pycache__/
 *.zip
 *.log
-.claude/
+.claude/*
+!.claude/agents/
 settings.json
 arkham_dividers_*/
 data/icomoon_project.json
