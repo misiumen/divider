@@ -11,7 +11,7 @@ pinned: false
 # Arkham Horror LCG divider generator
 
 Generates 3D-printable (STL) dividers for Arkham Horror: The Card Game campaigns:
-one campaign divider, one per scenario, one per encounter set, with the official
+one per scenario, one per encounter set, with the official
 localized names, exact card counts and the official encounter icons in relief.
 
 Data comes from [ArkhamDividerData](https://github.com/neizerth/ArkhamDividerData)

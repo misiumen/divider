@@ -33,7 +33,7 @@ def generate(campaign, lang, include_return, pattern, progress=gr.Progress()):
 with gr.Blocks(title="Arkham Horror LCG dividers") as demo:
     gr.Markdown(
         "# Arkham Horror LCG 3D-printable dividers\n"
-        "Pick a campaign and a language, get a zip of STLs: one divider per campaign, scenario and "
+        "Pick a campaign and a language, get a zip of STLs: one divider per scenario and "
         "encounter set, with official names, card counts and encounter icons in relief. "
         "Print flat, filament swap at Z = 1.2 mm for two colours."
     )

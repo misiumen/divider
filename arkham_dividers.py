@@ -98,25 +98,18 @@ def relate(story, core, with_return=True):
     return out
 
 
-def campaign_count(story):
-    """getCampaignCards: sum of type sizes over the unique sets of the whole campaign."""
-    sets = _uniq(
-        story["encounterSets"]
-        + story["scenarioEncounterSets"]
-        + [s for sc in story["scenarios"] for s in [sc["encounterSet"], *sc["encounterSets"]]]
-    )
-    return sum(_cards(s) for s in sets)
-
-
 def dividers(code, core, include_return=False, include_extra=True):
-    """Divider specs for a campaign: campaign, scenarios (by number), encounter sets, extra sets."""
+    """Divider specs for a campaign: scenarios (by number), encounter sets, extra sets.
+
+    No campaign-total divider: the card count of a whole box is nothing anyone sorts by.
+    """
     story = next((s for s in core["stories"] if s["code"] == code), None)
     if not story:
         raise SystemExit(f"unknown campaign code {code!r} (see --campaigns)")
     st = relate(story, core)
     ret = st["returnStory"] if include_return else None
     stories = [s for s in (st, ret) if s]
-    out = [{"type": "campaign", "code": s["code"], "title": s["name"], "icon": s.get("icon"), "count": campaign_count(s)} for s in stories]
+    out = []
 
     scenarios = [sc for s in stories for sc in s["scenarios"]]
     for sc in sorted(scenarios, key=lambda s: (s.get("number") is None, s.get("number") or 0)):
@@ -139,7 +132,7 @@ def dividers(code, core, include_return=False, include_extra=True):
 
 def translate(d, lang):
     """Official localized name from <lang>.json, keyed by the English name. None if absent."""
-    keys = {"campaign": ("campaigns", "stories"), "scenario": ("scenarios",), "encounter": ("encounterSets",)}[d["type"]]
+    keys = {"scenario": ("scenarios",), "encounter": ("encounterSets",)}[d["type"]]
     for k in keys:
         table = lang.get(k) or {}
         v = table.get(d["title"]) or next((v for key, v in table.items() if key.lower() == d["title"].lower()), None)

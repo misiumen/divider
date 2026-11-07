@@ -22,15 +22,15 @@ kart, które fizycznie stoją za nią w pudełku. Raportujesz po polsku. Niczego
 ## Co liczy generator
 
 `python arkham_dividers.py --campaign <kod> --lang pl --list` wypisuje przekładki z kolumną liczby kart.
-Logika w `arkham_dividers.py`: `dividers()`, `relate()`, `_apply()`, `campaign_count()`. Przeczytaj je,
+Logika w `arkham_dividers.py`: `dividers()`, `relate()`, `_apply()`. Przekładki kampanii nie ma (świadomie). Przeczytaj je,
 zanim zaczniesz porównywać, żeby odróżnić błąd danych od świadomej decyzji (np. zestaw częściowy).
 
 ## Procedura
 
 1. Zbierz listę kampanii: `python arkham_dividers.py --campaigns` (albo konkretną, jeśli podano).
 2. Dla każdej przekładki typu `encounter` i `scenario` ustal fizyczny rozmiar zestawu ze źródła 1 (fallback 2)
-   i porównaj z liczbą z generatora. Dla `campaign` porównaj z sumą pełnych zestawów własnych kampanii i
-   zaznacz, jak liczone są zestawy dodatkowe z pudełka podstawowego.
+   i porównaj z liczbą z generatora. Przekładka zestawu spotkań liczy cały fizyczny zestaw, także gdy kampania
+   używa go częściowo (`size` < `full_size`); taka różnica jest poprawna, nie błąd.
 3. Każdą rozbieżność sklasyfikuj: (a) zestaw częściowy nadpisany przez kampanię (`size` < `full_size`),
    (b) błąd w danych upstream, (c) błąd w logice generatora, (d) specjalna przekładka (np. Concealed Cards).
 4. Nie zatrzymuj się na pierwszym błędzie; sprawdź wszystkie wskazane kampanie.
